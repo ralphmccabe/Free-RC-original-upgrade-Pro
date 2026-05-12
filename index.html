@@ -111,8 +111,14 @@
             </div>
 
             <div class="p-6 space-y-8 pb-32">
-                <div class="space-y-4">
+                <div class="space-y-6">
+                    <!-- FLAVOR CONTROLS ELEVATED TO MASTER VIEW -->
+                    <button id="colorCycleBtn" aria-label="Cycle theme color" class="w-full bg-blue-950/20 border border-blue-900 rounded-lg p-2 text-xs font-bold text-blue-400 uppercase flex items-center justify-center gap-2 hover:bg-blue-900/40 shadow-[inset_0_1px_1px_rgba(255,255,255,0.05)] transition-all">
+                        <i data-lucide="palette" class="w-4 h-4"></i> CHANGE FLAVOR
+                    </button>
+
                     <h2 class="section-label">Data Management</h2>
+                    
                     <div class="grid grid-cols-2 gap-2">
                         <button id="openLibraryBtn" aria-label="Open Repository" class="bg-gray-800 border border-gray-600 rounded p-2 text-xs font-bold flex items-center justify-center gap-2 hover:bg-gray-700 transition-colors">
                             <i data-lucide="library" class="w-4 h-4 text-neon-green"></i> TACTICAL-CARD LIBRARY
@@ -120,27 +126,32 @@
                         <button id="saveProfileBtnManual" aria-label="Save current session profile" class="bg-gray-800 border border-gray-600 rounded p-2 text-xs font-bold flex items-center justify-center gap-2 hover:bg-gray-700 transition-colors">
                             <i data-lucide="save" class="w-4 h-4 text-blue-400"></i> SAVE CURRENT
                         </button>
-                        <button id="clearFormBtn" aria-label="Clear all form inputs" class="col-span-2 bg-red-950/20 border border-red-900 rounded p-2 text-xs font-bold text-red-500 hover:bg-red-900/40">CLEAR ALL DATA</button>
-                        <button id="colorCycleBtn" aria-label="Cycle theme color" class="col-span-2 bg-blue-950/20 border border-blue-900 rounded p-2 text-xs font-bold text-blue-400 uppercase flex items-center justify-center gap-2 hover:bg-blue-900/40">
-                            <i data-lucide="palette" class="w-4 h-4"></i> CHANGE FLAVOR
+                        <button id="clearFormBtn" aria-label="Clear all form inputs" class="col-span-2 bg-red-950/20 border border-red-900 rounded p-2 text-xs font-bold text-red-500 hover:bg-red-900/40 transition-colors">CLEAR ALL DATA</button>
+                    </div>
+
+                    <!-- MODERNIZED 2x2 CIRCULAR DASHBOARD -->
+                    <div class="grid grid-cols-2 gap-4 px-2">
+                        <button id="openAmmoLibraryBtn" aria-label="Open Ammo Library" class="col-span-1 aspect-square rounded-full bg-emerald-950/20 border border-emerald-900 text-emerald-400 uppercase flex flex-col items-center justify-center text-center p-3 hover:bg-emerald-900/40 hover:scale-[1.03] transition-all gap-1 shadow-[0_4px_15px_rgba(0,0,0,0.2)]">
+                            <i data-lucide="database" class="w-6 h-6 mb-0.5"></i>
+                            <span class="text-[9px] font-extrabold leading-tight tracking-wider">AMMO<br/>LIBRARY</span>
                         </button>
-                        <button id="openAmmoLibraryBtn" aria-label="Open Ammo Library" class="col-span-2 bg-emerald-950/20 border border-emerald-900 rounded p-2 text-xs font-bold text-emerald-400 uppercase flex items-center justify-center gap-2 hover:bg-emerald-900/40">
-                            <i data-lucide="database" class="w-4 h-4"></i> AMMO LIBRARY
+
+                        <button id="toggleReconMapperBtn" class="col-span-1 aspect-square rounded-full bg-indigo-950/40 border border-indigo-500 text-indigo-400 uppercase flex flex-col items-center justify-center text-center p-3 hover:bg-indigo-900/40 hover:scale-[1.03] transition-all gap-1 shadow-[0_4px_15px_rgba(0,0,0,0.2)]">
+                            <i data-lucide="map" class="w-6 h-6 mb-0.5"></i>
+                            <span class="text-[9px] font-extrabold leading-tight tracking-wider">TACTICAL<br/>MAPPER</span>
                         </button>
-                        <button id="toggleReconMapperBtn" class="col-span-2 bg-indigo-950/40 border border-indigo-500 rounded p-2 text-xs font-bold text-indigo-400 uppercase flex items-center justify-center gap-2 hover:bg-indigo-900/40">
-                            <i data-lucide="map" class="w-4 h-4"></i> TACTICAL RECON MAPPER
+
+                        <button id="launchDualHudBtn" class="col-span-1 aspect-square rounded-full bg-orange-600/20 border-2 border-orange-500 text-orange-400 uppercase flex flex-col items-center justify-center text-center p-3 hover:bg-orange-600/40 hover:scale-[1.03] transition-all gap-1 shadow-[0_0_15px_rgba(249,115,22,0.15)] animate-pulse-slow">
+                            <i data-lucide="layout-dashboard" class="w-6 h-6 mb-0.5"></i>
+                            <span class="text-[9px] font-extrabold leading-tight tracking-wider">DUAL-VIEW<br/>HUD</span>
                         </button>
-                        <!-- NEW DUAL VIEW HUD LAUNCHER -->
-                        <!-- ORIGINAL DUAL VIEW HUD LAUNCHER -->
-                        <button id="launchDualHudBtn" class="col-span-2 bg-orange-600/20 border-2 border-orange-500 rounded p-2.5 text-xs font-black text-orange-400 uppercase flex items-center justify-center gap-2 hover:bg-orange-600/40 transition-all shadow-[0_0_15px_rgba(249,115,22,0.15)] animate-pulse-slow">
-                            <i data-lucide="layout-dashboard" class="w-4 h-4"></i> LAUNCH DUAL-VIEW HUD
-                        </button>
-                        
-                        <!-- NEW PRO TOOLS COMMAND DASHBOARD LAUNCHER -->
-                        <button id="launchToolsDashboardBtn" class="col-span-2 bg-emerald-600/20 border-2 border-emerald-500 rounded p-2.5 text-xs font-black text-emerald-400 uppercase flex items-center justify-center gap-2 hover:bg-emerald-600/40 transition-all shadow-[0_0_15px_rgba(16,185,129,0.15)] animate-pulse-slow">
-                            <i data-lucide="terminal" class="w-4 h-4"></i> LAUNCH TOOLS DASHBOARD
+
+                        <button id="launchToolsDashboardBtn" class="col-span-1 aspect-square rounded-full bg-emerald-600/20 border-2 border-emerald-500 text-emerald-400 uppercase flex flex-col items-center justify-center text-center p-3 hover:bg-emerald-600/40 hover:scale-[1.03] transition-all gap-1 shadow-[0_0_15px_rgba(16,185,129,0.15)] animate-pulse-slow">
+                            <i data-lucide="terminal" class="w-6 h-6 mb-0.5"></i>
+                            <span class="text-[9px] font-extrabold leading-tight tracking-wider">TOOLS<br/>DASHBOARD</span>
                         </button>
                     </div>
+                </div>
                 </div>
 
                 <select id="profileSelect" class="hidden" aria-hidden="true"></select>
@@ -209,7 +220,7 @@
                     <!-- MISSING DISTANCE DATA SECTION START -->
                     <section class="space-y-4">
                         <button onclick="toggleSection('distance-inputs-container')" class="w-full flex items-center justify-between py-2 border-b border-gray-700 group hover:border-neon-green transition-colors">
-                            <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2 group-hover:text-neon-green">
+                            <span id="dist-data-title" class="text-[10px] font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2 group-hover:text-neon-green transition-colors duration-300">
                                 <i data-lucide="chevron-down" class="w-3 h-3"></i> DISTANCE DATA (100 - 1000)
                             </span>
                         </button>
