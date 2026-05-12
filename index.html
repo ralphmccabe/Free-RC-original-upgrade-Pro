@@ -85,6 +85,12 @@
         .input-field:focus { outline: none; border-color: var(--neon-green); background: rgba(0, 0, 0, 0.5); box-shadow: 0 0 10px rgba(34, 197, 94, 0.2); }
 
         #card-container span[id^="display-"] { display: inline-block; transform: translateY(-3px); line-height: normal; }
+        /* Global Placeholder Enhancement: Disambiguate placeholders from dynamic text to enhance data entry clarity */
+        input::placeholder {
+            color: #64748b !important; /* slate-500 */
+            opacity: 0.7 !important;
+            font-weight: 400 !important;
+        }
     </style>
 </head>
 
@@ -149,9 +155,9 @@
                     <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
                         <div class="col-span-1"><input type="text" id="caliber" class="input-field" placeholder="Caliber" maxlength="25"></div>
                         <div class="col-span-1"><input type="text" id="zero" class="input-field" placeholder="Zero Range" maxlength="25"></div>
-                        <div class="col-span-1"><label for="bal-input-alt" class="sr-only">Alt (ft)</label><input type="number" id="bal-input-alt" class="input-field" placeholder="Alt (ft)"></div>
-                        <div class="col-span-1"><label for="bal-input-temp" class="sr-only">Temp (°F)</label><input type="number" id="bal-input-temp" class="input-field" placeholder="Temp (°F)"></div>
-                        <div class="col-span-1"><label for="bal-input-baro" class="sr-only">Baro (inHg)</label><input type="number" id="bal-input-baro" class="input-field" placeholder="Baro (inHg)"></div>
+                        <div class="col-span-1"><label for="sidebar-bal-input-alt" class="sr-only">Alt (ft)</label><input type="number" id="sidebar-bal-input-alt" class="input-field" placeholder="Alt (ft)"></div>
+                        <div class="col-span-1"><label for="sidebar-bal-input-temp" class="sr-only">Temp (°F)</label><input type="number" id="sidebar-bal-input-temp" class="input-field" placeholder="Temp (°F)"></div>
+                        <div class="col-span-1"><label for="sidebar-bal-input-baro" class="sr-only">Baro (inHg)</label><input type="number" id="sidebar-bal-input-baro" class="input-field" placeholder="Baro (inHg)"></div>
                         <div class="col-span-2 md:col-span-3 bg-black/40 border border-gray-700 rounded p-1 flex justify-between px-2 text-[10px] text-gray-400 mt-1">
                             <span>Computed Density Altitude (DA):</span>
                             <span id="bal-display-da" class="text-neon-green font-bold tracking-widest">-- ft</span>
@@ -947,6 +953,7 @@
             let refreshing = false;
             navigator.serviceWorker.addEventListener('controllerchange', () => { if (!refreshing) { refreshing = true; window.location.reload(); } });
         }
+        */
         function toggleSection(id) { document.getElementById(id).classList.toggle('hidden'); }
     </script>
     <!-- ADDED SCRIPT BLOCK TO MAKE THE NEW BUTTON WORK -->
@@ -1096,7 +1103,7 @@
                                              <button id="bal-sync-map" class="text-[5px] bg-blue-950 border border-blue-800 text-blue-400 px-1 rounded font-black hover:bg-blue-600 hover:text-white">SYNC</button>
                                          </div>
                                          <div class="flex items-baseline gap-1 mt-0.5">
-                                             <input type="number" id="bal-input-range" value="577" class="bg-transparent text-white text-xl font-black font-mono outline-none w-full leading-none">
+                                             <input type="number" id="bal-input-range" placeholder="577" class="bg-transparent text-white text-xl font-black font-mono outline-none w-full leading-none">
                                              <span class="text-[7px] text-blue-400 font-black uppercase shrink-0">YDS</span>
                                          </div>
                                      </div>
@@ -1117,7 +1124,7 @@
                                             <button id="bal-sync-wx" class="text-[5px] bg-emerald-950 border border-emerald-800 text-emerald-400 px-1 rounded font-black hover:bg-emerald-600 hover:text-white">SYNC</button>
                                         </div>
                                         <div class="flex items-baseline gap-1 mt-0.5">
-                                            <input type="number" id="bal-input-wind" value="3" class="bg-transparent text-white text-xl font-black font-mono outline-none w-full leading-none">
+                                            <input type="number" id="bal-input-wind" placeholder="3" class="bg-transparent text-white text-xl font-black font-mono outline-none w-full leading-none">
                                             <span class="text-[7px] text-emerald-600 font-black uppercase shrink-0">MPH</span>
                                         </div>
                                     </div>
@@ -1135,7 +1142,7 @@
                                 <div class="relative bg-gray-900/50 border border-gray-800 rounded-sm p-1 group flex flex-col">
                                     <span class="text-[6px] text-gray-500 font-black uppercase">03: MUZZLE VEL</span>
                                     <div class="flex items-baseline gap-1 mt-0.5">
-                                        <input type="number" id="bal-input-mv" value="2600" class="bg-transparent text-white text-xl font-black font-mono outline-none w-full leading-none">
+                                        <input type="number" id="bal-input-mv" placeholder="2600" class="bg-transparent text-white text-xl font-black font-mono outline-none w-full leading-none">
                                     </div>
                                     <div class="text-[5px] text-gray-600 font-mono mt-auto">CORR. FPS</div>
                                 </div>

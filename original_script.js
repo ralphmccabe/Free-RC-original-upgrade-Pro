@@ -1375,6 +1375,16 @@ document.addEventListener('DOMContentLoaded', () => {
         if (savedData) {
             try {
                 const formData = JSON.parse(savedData);
+                
+                // --- ONE-TIME STABILIZATION PATCH: PURGE CORRUPT LEGACY KEYS FROM CACHE ---
+                if (localStorage.getItem('rc_fix_corrupt_v1') !== 'true') {
+                    delete formData['bal-input-mv'];
+                    delete formData['bal-input-range'];
+                    delete formData['bal-input-wind'];
+                    localStorage.setItem('rangeCardAutoSave', JSON.stringify(formData));
+                    localStorage.setItem('rc_fix_corrupt_v1', 'true');
+                    // console.log("Fixed data corruptions in auto-save cache.");
+                }
                 Object.keys(formData).forEach(id => {
                     const input = document.getElementById(id);
                     if (input) {
@@ -3571,11 +3581,14 @@ document.addEventListener('DOMContentLoaded', () => {
         const effectiveRangeYds = rawRangeYds * inputCosine;
 
         if (effectiveRangeYds <= 0) return;
+        
+        // PROTECTIVE THRESHOLD: Avoid compute lockups/unstable iterations during live user typing
+        if (mv < 100) return; 
 
-        // 2. HIGH-FIDELITY AIR DENSITY (ICAO METRO GRADIENT)
-        const altScaleFactor = Math.pow(1 - (0.0000068753 * altitude), 5.2559);
-        const trueStationPressure = baroInHg * altScaleFactor; 
-        const pressRatio = trueStationPressure / 29.92;
+        // 2. HIGH-FIDELITY AIR DENSITY (UNIFIED STATION PRESSURE PHYSICS)
+        // Unified with Telemetry dashboard: Since inputs are labeled and processed as native STATION 
+        // pressure, we omit the redundant altitude-scaling factor to prevent mathematical double-derating.
+        const pressRatio = baroInHg / 29.92;
         const tempRatio = 518.67 / (459.67 + tempF);
         const airDensityRatio = pressRatio * tempRatio;
 
@@ -3691,6 +3704,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 v_x = v_x_next;
                 v_y = v_y_next;
                 t += dt;
+                
+                // ABSOLUTE SAFETY BREAKERS: Prevent browser lockup on hyper-low velocity collisions
+                if (v_x < 10) break; 
+                if (t > 10.0) break; // Bullets generally don't fly for 10+ seconds
             }
             
             return { time: t, drop: d_y * 12, finalVel: Math.sqrt(v_x*v_x + v_y*v_y) };
@@ -3704,73 +3721,67 @@ document.addEventListener('DOMContentLoaded', () => {
         // If targetSim.drop is NEGATIVE, the bullet is hitting LOW, so we need an UP hold (+netDrop)
         const netDropInches = -targetSim.drop;
 
-        // 6. WINDAGE (DYNAMIC RELATIVE VECTORING: WIND DIR VS SHOT DIR)
+        // 6. UNIFIED WINDAGE & GYROSCOPIC VECTORS (NET DRIFT SUMMATION)
         const windDirDeg = parseFloat(document.getElementById('bal-input-wind-dir')?.value) || 90;
-        const shotDirDeg = parseFloat(document.getElementById('bal-input-shot-dir')?.value) || 0; // NEW INPUT
+        const shotDirDeg = parseFloat(document.getElementById('bal-input-shot-dir')?.value) || 0;
         
-        // Relativistic Math: The effective angle is the difference between source and target heading.
         const relativeAngleDeg = windDirDeg - shotDirDeg;
         const angleRad = relativeAngleDeg * (Math.PI / 180);
+        const rawSine = Math.sin(angleRad); 
         
-        // The Sine yields relative crosswind strength (+Right vs -Left component)
-        const rawSine = Math.sin(angleRad);
-        const crosswindComponent = Math.abs(rawSine);
-        const effectiveCrosswindMph = windMph * crosswindComponent;
-
-        // === LIVE DYNAMIC COMPASS LOGIC ===
-        // Angle 1-180: Wind from Right -> Pushes Left -> Correct scope RIGHT (R)
-        // Angle 181-359: Wind from Left -> Pushes Right -> Correct scope LEFT (L)
-        // The Ref App standard correlates negative sine (West/Left source) to Left (L) correction.
-        let directionCode = rawSine > 0.01 ? 'R' : 'L';
-        if (windMph === 0 || crosswindComponent < 0.05) directionCode = '-';
-
-        const crosswindFps = effectiveCrosswindMph * 1.4667;
+        // Physics: Calculate basic drift magnitude in inches
+        const crosswindFps = (windMph * Math.abs(rawSine)) * 1.4667;
         const vacuumTime = (effectiveRangeYds * 3) / mv;
-        const baseDriftInches = crosswindFps * (targetSim.time - vacuumTime) * 12;
+        const baseDriftMag = crosswindFps * (targetSim.time - vacuumTime) * 12;
         
-        const windDriftInches = baseDriftInches; 
+        // Realize vector direction: 
+        // Positive (+) implies wind pushes Left -> Requires Right scope correction.
+        // Negative (-) implies wind pushes Right -> Requires Left scope correction.
+        const windDriftInches = rawSine >= 0 ? baseDriftMag : -baseDriftMag;
 
-        // 7. CONVERT TO OPTIC UNITS (MILS/MOA)
+        // Calculate high-fidelity Spin Drift (Counter-Clockwise Gyro-Drift)
+        // Default physics rule: 0.00018 mils offset per yard.
+        const spinDriftMils = effectiveRangeYds * 0.00018;
+        const milConstant = effectiveRangeYds * 0.036;
+        const spinDriftInches = spinDriftMils * milConstant;
+        
+        // ALGEBRAIC UNIFICATION: Combine dynamic wind push and static right-hand spin push.
+        // Standard spin pushes bullet Right -> Always forces additional Left (-) correction.
+        const netDriftInches = windDriftInches - spinDriftInches;
+
+        // Resolve Master Directional Orientation Code based on total Net Vector state
+        let directionCode = '-';
+        if (netDriftInches > 0.08) directionCode = 'R'; // Trivial threshold
+        else if (netDriftInches < -0.08) directionCode = 'L';
+
+        // 7. CONVERT UNIFIED NET VECTOR TO OPTIC UNITS (MILS / MOA)
         const opticMode = window.currentOpticMode || 'MIL';
         
         let opticElevValue = 0;
-        let opticWindValue = 0;
+        let opticWindValue = 0; 
         let finalClicks = 0;
         let windClicks = 0;
         let elevDirectionCode = 'U';
 
         if (opticMode === 'MIL') {
-            const milConstant = effectiveRangeYds * 0.036;
-            const baseElevMils = netDropInches / milConstant; 
-            const baseWindMils = Math.abs(windDriftInches / milConstant);
-            const spinDriftOffset = effectiveRangeYds * 0.00018;
-            
-            opticElevValue = baseElevMils;
-            opticWindValue = baseWindMils + spinDriftOffset;
+            opticElevValue = netDropInches / milConstant; 
+            opticWindValue = Math.abs(netDriftInches / milConstant);
             
             elevDirectionCode = opticElevValue >= 0 ? 'U' : 'D';
-            finalClicks = Math.round(Math.abs(opticElevValue) * 10); // 0.1 MIL Clicks
-            windClicks = Math.round(Math.abs(opticWindValue) * 10);
-        } else {
-            // MOA Math
-            // 1 MOA = 1.047 inches at 100 yards -> true MOA constant
-            const moaConstant = effectiveRangeYds * 0.01047;
-            const baseElevMoa = netDropInches / moaConstant;
-            const baseWindMoa = Math.abs(windDriftInches / moaConstant);
-            
-            // Convert Spin Drift directly to MOA
-            const spinDriftOffsetMoa = (effectiveRangeYds * 0.00018) * 3.43775;
-            
-            opticElevValue = baseElevMoa;
-            opticWindValue = baseWindMoa + spinDriftOffsetMoa;
-            
-            elevDirectionCode = opticElevValue >= 0 ? 'U' : 'D';
-            // User's reference app is configured for 0.1 turret increments (10 clicks per unit) rather than standard 1/4 MOA
             finalClicks = Math.round(Math.abs(opticElevValue) * 10); 
-            windClicks = Math.round(Math.abs(opticWindValue) * 10);
+            windClicks = Math.round(opticWindValue * 10);
+        } else {
+            // Unified MOA Output
+            const moaConstant = effectiveRangeYds * 0.01047;
+            opticElevValue = netDropInches / moaConstant;
+            opticWindValue = Math.abs(netDriftInches / moaConstant);
+            
+            elevDirectionCode = opticElevValue >= 0 ? 'U' : 'D';
+            finalClicks = Math.round(Math.abs(opticElevValue) * 10); 
+            windClicks = Math.round(opticWindValue * 10);
         }
 
-        // 8. PUSH TO DASHBOARD WITH DYNAMIC DIRECTION
+        // 8. ATOMIC DASHBOARD UPDATE
         const elevEl = document.getElementById('sol-elev-mil');
         if(elevEl) elevEl.textContent = Math.abs(opticElevValue).toFixed(2);
         
@@ -3786,12 +3797,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const elevUnitEl = document.getElementById('sol-elev-unit');
         if (elevUnitEl) elevUnitEl.textContent = opticMode;
 
-        // Windage UI Update
+        // Final Windage Synchronization (Unified Net Readouts)
         const windMilEl = document.getElementById('sol-wind-mil');
         if(windMilEl) windMilEl.textContent = opticWindValue.toFixed(2);
         
         const windInchEl = document.getElementById('sol-wind-inch');
-        if(windInchEl) windInchEl.textContent = Math.abs(windDriftInches).toFixed(1) + '"';
+        if(windInchEl) windInchEl.textContent = Math.abs(netDriftInches).toFixed(1) + '"';
         
         const windLabelEl = document.getElementById('sol-wind-label-code');
         if (windLabelEl) windLabelEl.textContent = directionCode;
@@ -3917,6 +3928,36 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             
             runSolverMatrix();
+        });
+    }
+
+    // === GLOBAL ENVIRONMENT SYNC (SIDEBAR <-> DASHBOARD) ===
+    ['alt', 'temp', 'baro'].forEach(key => {
+        const sideEl = document.getElementById(`sidebar-bal-input-${key}`);
+        const dashEl = document.getElementById(`bal-input-${key}`);
+        if(sideEl && dashEl) {
+            // When user types in sidebar, push to dashboard & recalc
+            sideEl.addEventListener('input', (e) => {
+                dashEl.value = e.target.value;
+                runSolverMatrix();
+            });
+            // When user types in dashboard, push back to sidebar 
+            dashEl.addEventListener('input', (e) => {
+                sideEl.value = e.target.value;
+            });
+        }
+    });
+
+    // === MUZZLE VELOCITY GLOBAL SYNC (SIDEBAR <-> DASHBOARD) ===
+    const sideMv = document.getElementById('velocity');
+    const dashMv = document.getElementById('bal-input-mv');
+    if (sideMv && dashMv) {
+        sideMv.addEventListener('input', (e) => {
+            dashMv.value = e.target.value;
+            runSolverMatrix();
+        });
+        dashMv.addEventListener('input', (e) => {
+            sideMv.value = e.target.value;
         });
     }
 
