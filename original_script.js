@@ -95,33 +95,41 @@ document.addEventListener('DOMContentLoaded', () => {
     // === 3. Canvas Logic (Shots & Holds) ===
     function calculateGroupMetrics(points) {
         if (points.length < 5) return null;
+        
+        // SAFETY THROTTLE: Max 12 shots for best subset discovery to prevent 2^N exponential lockups
+        const workingSet = points.slice(0, 12);
+        const n = workingSet.length;
+        
         let minSpread = Infinity;
         let bestSubset = [];
-        const n = points.length;
 
-        // Combinations generator of size 5
-        for (let i = 0; i < (1 << n); i++) {
-            let subset = [];
-            for (let j = 0; j < n; j++) {
-                if ((i & (1 << j)) !== 0) subset.push(points[j]);
-            }
-            if (subset.length === 5) {
+        // Efficient Combination Generator: N choose 5
+        function getCombinations(idx, currentSubset) {
+            if (currentSubset.length === 5) {
                 let maxDist = 0;
                 for (let a = 0; a < 5; a++) {
                     for (let b = a + 1; b < 5; b++) {
-                        const dx = subset[a].nx - subset[b].nx;
-                        const dy = subset[a].ny - subset[b].ny;
-                        const dist = Math.sqrt(dx*dx + dy*dy);
+                        const dx = currentSubset[a].nx - currentSubset[b].nx;
+                        const dy = currentSubset[a].ny - currentSubset[b].ny;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
                         if (dist > maxDist) maxDist = dist;
                     }
                 }
                 if (maxDist < minSpread) {
                     minSpread = maxDist;
-                    bestSubset = subset;
+                    bestSubset = [...currentSubset];
                 }
+                return;
+            }
+            for (let i = idx; i < n; i++) {
+                currentSubset.push(workingSet[i]);
+                getCombinations(i + 1, currentSubset);
+                currentSubset.pop();
             }
         }
-        return { minSpread, bestSubset };
+
+        getCombinations(0, []);
+        return bestSubset.length === 5 ? { minSpread, bestSubset } : null;
     }
 
     // Unified target canvas initialization with mirroring
@@ -2845,14 +2853,11 @@ document.addEventListener('DOMContentLoaded', () => {
                         const inHg = hpa * 0.02953;
                         const tempF = c.temperature_2m;
 
-                        // 3. DYNAMIC DENSITY ALTITUDE CALCULATION (ISA Scientific Std)
-                        // Standard Pressure Altitude derivation
-                        const pressAlt = (1 - Math.pow(hpa / 1013.25, 0.190284)) * 145366.45;
-                        // Temperature Delta relative to Standard Atmosphere
-                        const isaTempC = 15 - (1.98 * (pressAlt / 1000));
-                        const localTempC = (tempF - 32) * (5 / 9);
-                        // Project total Density Altitude offset
-                        const densAlt = Math.round(pressAlt + (118.8 * (localTempC - isaTempC)));
+                        // 3. DYNAMIC DENSITY ALTITUDE CALCULATION (Unified High-Fidelity Physics)
+                        const pressRatio = inHg / 29.92;
+                        const tempRatio = 518.67 / (459.67 + tempF);
+                        const airDensityRatio = pressRatio * tempRatio;
+                        const densAlt = Math.round((1 - Math.pow(airDensityRatio, 1 / 4.25588)) / 0.0000068753);
 
                         // 4. WMO WEATHER CODE MAPPING
                         let skyCond = "CLEAR";
@@ -3935,8 +3940,8 @@ document.addEventListener('DOMContentLoaded', () => {
             //    (this allows user to interact with inside content without it closing).
             if (panel.classList.contains('is-maximized')) return;
 
-            // 2. If they clicked a native control/button inside, let that action fire instead of zooming
-            if (e.target.closest('button') || e.target.closest('select') || e.target.closest('input')) return;
+            // 2. If they clicked a native control/button/input block inside, let that action fire instead of zooming
+            if (e.target.closest('button') || e.target.closest('select') || e.target.closest('input') || e.target.closest('.relative.bg-gray-900\\/50')) return;
             
             // EXPLICIT BYPASS: If they click INSIDE the Grid Selectors to load a card, DO NOT trigger auto-zoom container!
             if (e.target.closest('#dope-cache-list-injection') || 

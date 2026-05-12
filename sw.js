@@ -1,10 +1,10 @@
-/* TRC-PRO-VERSION - v1.9-DEV */
-const CACHE_NAME = 'trc-pro-upgrade-v1.9';
+/* TRC-PRO-VERSION - v2.0-DEV */
+const CACHE_NAME = 'trc-pro-upgrade-v2.0';
 const ASSETS = [
     './',
-    './index.html?v=5.8',
-    './style.css?v=1.5',
-    './original_script.js?v=5.8',
+    './index.html?v=6.0',
+    './style.css?v=1.6',
+    './original_script.js?v=6.0',
     './manifest.json',
     './icon-512.png',
     './icon-192.png',
