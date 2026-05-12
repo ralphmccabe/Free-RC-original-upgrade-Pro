@@ -1334,12 +1334,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 colorCycleBtn.style.backgroundColor = `rgba(${flavor.rgb}, 0.2)`;
             };
             
-            // Sync operational components to the new flavor hex
-            const distTitle = document.getElementById('dist-data-title');
-            if (distTitle) {
-                distTitle.style.color = flavor.hex;
-            }
-            
             if (window.lucide) lucide.createIcons();
         }
 
